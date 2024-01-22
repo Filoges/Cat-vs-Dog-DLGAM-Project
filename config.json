@@ -1,0 +1,26 @@
+{
+    "model_type": "GAN",   
+    "image_size": 64,
+    "batch_size": 64,
+    "num_channels": 2,
+    "num_epochs": 100,
+    "gen_learning_rate": 0.0002,
+    "dis_learning_rate": 0.0002,
+    "beta1": 0.5,
+    "momentum" : 0.9,
+    "loss_type": "bce",  
+    "optimizer": "rmsprop",
+    "dataset_type": 13,
+    "dataset": "ANIMALS",
+    "label_dim": 2,
+    "test_size": 32,
+    "use_pretrained_gen": false,
+    "model_path": "./Models/WGAN64/no albumentation/netWG.pth",
+    "use_pretrained_vae" : false
+  }
+  
+  
+  
+  
+  
+  

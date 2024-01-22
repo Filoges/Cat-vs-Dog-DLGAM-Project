@@ -1,0 +1,5 @@
+{
+    "generator_model_path": "./Models/WGAN64/new datasets + old/netWG.pth",
+    "model_type": "WGAN",
+    "image_size": 64
+}
