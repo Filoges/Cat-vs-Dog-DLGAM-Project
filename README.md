@@ -27,7 +27,13 @@ This is the configuration file for the project. Instead of writing a program tha
 In the main.py file there is a method called "data_loading" that return the dataloader used later during training. In this method the "dataset_type" param is read, and a different dataloader is used based on its value.
 For this project 4 different datasets hava been used:
 - The cat and dogs stanford dataset (original dataset for this project)
+- The cat dataset (https://www.kaggle.com/datasets/crawford/cat-dataset/data)
 - The dog faces dataset (https://images.cv/dataset/dog-face-image-classification-dataset)
+- The cats with annotations dataset (https://images.cv/dataset/cat-image-classification-dataset)
+- The dog dataset with annotations (https://www.kaggle.com/datasets/jessicali9530/stanford-dogs-dataset)
+- Cats vs Dogs dataset (https://www.kaggle.com/datasets/karakaggle/kaggle-cat-vs-dog-dataset)
+
+The "dataset_type" argument refers to some pre determined mixtures of this datasets. If "dataset_type" is set to 1, only the project's original dataset is used. If set to 2, the cats vs dogs dataset is used. If set to 6, a combination of all datasets is used.
 
 ## main.py
 As the name suggests this is the main file, the file that launches the desired training. 
