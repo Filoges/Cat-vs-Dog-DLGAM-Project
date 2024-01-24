@@ -13,6 +13,7 @@ with open('samples_gen.json', 'r') as config_file:
 generator_model_path = config['generator_model_path']
 image_size = config['image_size']
 generator_type = config['model_type']
+num_images_to_generate = config['num_images_to_generate']
 
 # Instantiate your generator
 if generator_type == "WGAN":
@@ -44,9 +45,6 @@ generator.load_state_dict(torch.load(generator_model_path))
 
 # Set the generator to evaluation mode
 generator.eval()
-
-# Define the number of images to generate
-num_images_to_generate = 500
 
 # Define the output directory where images will be saved
 output_dir = 'generated_images'
