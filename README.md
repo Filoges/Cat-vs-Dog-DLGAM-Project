@@ -36,4 +36,19 @@ For this project 4 different datasets hava been used:
 The "dataset_type" argument refers to some pre determined mixtures of this datasets. If "dataset_type" is set to 1, only the project's original dataset is used. If set to 2, the cats vs dogs dataset is used. If set to 6, a combination of all datasets is used.
 
 ## main.py
-As the name suggests this is the main file, the file that launches the desired training. 
+As the name suggests this is the main file, the file that launches the desired training. This file reads from the .json file the necessary parameters and starts the right training, based on those parameters. 
+
+## models.py
+This file contains all the models used in this project. All the GAN, CGAN, WGAN and VA configurations.
+
+## dataloaders.py
+This file contains the dataloaders for each dataset. Each dataset, being organized in its own way, has its own data loader.
+
+## generate_samples.py
+This file generates n images using the chosen pre trained model. It reads its parameters from the "samples_gen.json" file.
+
+## samples_gen.json
+This file sets the params for the generate_samples.py script. It is possible to generate pet images using a pre trained GAN model (any type of GAN, so GAN, CGAN, WGAN). The number of images to generate and the size depends on 2 parameters:
+- image_size
+- num_images_to_generate
+Of course, the "image_size" param should match the image size the model was trained on.
