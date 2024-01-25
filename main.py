@@ -201,8 +201,6 @@ def data_loading(dataset_type, dataset):
             #     plt.imshow(to_pil(img))
             # plt.show()
 
-            train_data = torch.utils.data.ConcatDataset([train_data])
-
         elif dataset_type == 2:
             train_data1 = dataloaders.CustomDataset2(root=TRAIN_FOLDER2, transform=data_transform, label=1)
             train_data2 = dataloaders.CustomDataset2(root=TRAIN_FOLDER3, transform=data_transform, label=0)
@@ -314,6 +312,21 @@ def data_loading(dataset_type, dataset):
         elif dataset_type == 13:
             train_data4 = dataloaders.DogFaces(root_dir=TRAIN_FOLDER7, transform=data_transform)
             train_data = train_data4
+        
+        elif dataset_type == 14:
+            train_data6 = dataloaders.CatImagesWithoutLabels(root_dir=TRAIN_FOLDER6, transform=data_transform)
+            train_data = train_data6
+        
+        elif dataset_type == 15:
+            train_data1 = dataloaders.CatFaces(root_dir=TRAIN_FOLDER4, transform=data_transform)
+            train_data2 = dataloaders.DogFaces(root_dir=TRAIN_FOLDER7, transform=data_transform)
+            train_data = torch.utils.data.ConcatDataset([train_data1, train_data2])
+
+        elif dataset_type == 16:
+            train_data = dataloaders.CustomDataset2(root=TRAIN_FOLDER1, transform=data_transform, path_to_id=LABEL_FOLDER)
+            train_data1 = dataloaders.CatFaces(root_dir=TRAIN_FOLDER4, transform=data_transform)
+            train_data2 = dataloaders.DogFaces(root_dir=TRAIN_FOLDER7, transform=data_transform)
+            train_data = torch.utils.data.ConcatDataset([train_data, train_data1, train_data2])
 
 
         dataloader = torch.utils.data.DataLoader(dataset=train_data,
@@ -357,17 +370,17 @@ def weights_init(m):
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
 
-def create_Cgen(model_path, use_pretrained_gen):
+def create_Cgen(model_path, use_pretrained_gen, nc, label_dim):
 
     # Create the generator
     if image_size == 32:
-        netG = models.CGANGen32().to(device)
+        netG = models.CGANGen32(nc, label_dim).to(device)
     elif image_size == 64:
-        netG = models.CGANGen64().to(device)
+        netG = models.CGANGen64(nc, label_dim).to(device)
     elif image_size == 128:
-        netG = models.CGANGen128().to(device)
+        netG = models.CGANGen128(nc, label_dim).to(device)
     elif image_size == 256:
-        netG = models.CGANGen256().to(device)
+        netG = models.CGANGen256(nc, label_dim).to(device)
 
     # Apply the weights_init function to randomly initialize all weights
     #  to mean=0, stdev=0.02.
@@ -386,17 +399,17 @@ def create_Cgen(model_path, use_pretrained_gen):
     return netG
 
 
-def create_Cdis():
+def create_Cdis(nc, label_dim):
 
     # Create the Discriminator
     if image_size == 32:
-        netD = models.CGANDis32().to(device)
+        netD = models.CGANDis32(nc, label_dim).to(device)
     if image_size == 64:
-        netD = models.CGANDis64().to(device)
+        netD = models.CGANDis64(nc, label_dim).to(device)
     elif image_size == 128:
-        netD = models.CGANDis128().to(device)
+        netD = models.CGANDis128(nc, label_dim).to(device)
     elif image_size == 256:
-        netD = models.CGANDis256().to(device)
+        netD = models.CGANDis256(nc, label_dim).to(device)
 
     # Apply the weights_init function to randomly initialize all weights
     #  to mean=0, stdev=0.2.
@@ -410,17 +423,17 @@ def create_Cdis():
 def filter_keys(dictionary, target_word):
     return{key: value for key, value in dictionary.items() if target_word in key}
 
-def create_Wgen(model_path, use_pretrained_gen, use_pretrained_vae):
+def create_Wgen(model_path, use_pretrained_gen, use_pretrained_vae, nc, label_dim):
 
     # Create the generator
     if image_size == 32:
-        netG = models.WGANGen32().to(device)
+        netG = models.WGANGen32(nc, label_dim).to(device)
     elif image_size == 64:
-        netG = models.WGANGen64().to(device)
+        netG = models.WGANGen64(nc, label_dim).to(device)
     elif image_size == 128:
-        netG = models.WGANGen128().to(device)
+        netG = models.WGANGen128(nc, label_dim).to(device)
     elif image_size == 256:
-        netG = models.WGANGen256().to(device)
+        netG = models.WGANGen256(nc, label_dim).to(device)
 
     # Apply the weights_init function to randomly initialize all weights
     #  to mean=0, stdev=0.02.
@@ -460,17 +473,17 @@ def create_Wgen(model_path, use_pretrained_gen, use_pretrained_vae):
     return netG
 
 
-def create_Wdis():
+def create_Wdis(nc, label_dim):
 
     # Create the Discriminator
     if image_size == 32:
-        netD = models.WGANDis32().to(device)
+        netD = models.WGANDis32(nc, label_dim).to(device)
     elif image_size == 64:
-        netD = models.WGANDis64().to(device)
+        netD = models.WGANDis64(nc, label_dim).to(device)
     elif image_size == 128:
-        netD = models.WGANDis128().to(device)
+        netD = models.WGANDis128(nc, label_dim).to(device)
     elif image_size == 256:
-        netD = models.WGANDis256().to(device)
+        netD = models.WGANDis256(nc, label_dim).to(device)
 
     # Apply the weights_init function to randomly initialize all weights
     #  to mean=0, stdev=0.2.
@@ -481,17 +494,17 @@ def create_Wdis():
 
     return netD
 
-def create_gen():
+def create_gen(nc):
 
     # Create the generator
     if image_size == 32:
-        netG = models.Generator32().to(device)
+        netG = models.Generator32(nc).to(device)
     elif image_size == 64:
-        netG = models.Generator64().to(device)
+        netG = models.Generator64(nc).to(device)
     elif image_size == 128:
-        netG = models.Generator128().to(device)
+        netG = models.Generator128(nc).to(device)
     elif image_size == 256:
-        netG = models.Generator256().to(device)
+        netG = models.Generator256(nc).to(device)
 
     # Apply the weights_init function to randomly initialize all weights
     #  to mean=0, stdev=0.02.
@@ -503,17 +516,17 @@ def create_gen():
     return netG
 
 
-def create_dis():
+def create_dis(nc):
 
     # Create the Discriminator
     if image_size == 32:
-        netD = models.Discriminator32().to(device)
+        netD = models.Discriminator32(nc).to(device)
     elif image_size == 64:
-        netD = models.Discriminator64().to(device)
+        netD = models.Discriminator64(nc).to(device)
     elif image_size == 128:
-        netD = models.Discriminator128().to(device)
+        netD = models.Discriminator128(nc).to(device)
     elif image_size == 256:
-        netD = models.Discriminator256().to(device)
+        netD = models.Discriminator256(nc).to(device)
 
     # Apply the weights_init function to randomly initialize all weights
     #  to mean=0, stdev=0.2.
@@ -1074,8 +1087,8 @@ def main():
         set_seed()
         dataloader = data_loading(dataset_type, dataset=dataset)
 
-        netG = create_gen()
-        netD = create_dis()
+        netG = create_gen(nc)
+        netD = create_dis(nc)
 
         criterion, fixed_noise, real_label, fake_label, optimizerG, optimizerD = initializion(netG, netD, loss_type, optimizer)
         
@@ -1083,9 +1096,9 @@ def main():
 
     if model_type == "VA":
         if image_size == 32:
-            vae = models.VAE().to(device)
+            vae = models.VAE(image_channels=nc).to(device)
         else:
-            vae = models.VAE64().to(device)
+            vae = models.VAE64(image_channels=nc).to(device)
         train_loader, test_loader = data_loading_VA(dataset_type, dataset=dataset)
         criterion = nn.BCELoss(reduction="sum")
         train_VA(vae, train_loader, criterion)
@@ -1095,8 +1108,8 @@ def main():
         set_seed()
         dataloader = data_loading(dataset_type, dataset=dataset)
 
-        netG = create_Wgen(model_path, use_pretrained_gen, use_pretrained_vae)
-        netD = create_Wdis()
+        netG = create_Wgen(model_path, use_pretrained_gen, use_pretrained_vae, nc, label_dim)
+        netD = create_Wdis(nc, label_dim)
 
         criterion, fixed_noise, real_label, fake_label, optimizerG, optimizerD = initializion(netG, netD, loss_type, optimizer)
         fill, onehot = label_preprocess()
@@ -1107,8 +1120,8 @@ def main():
         set_seed()
         dataloader = data_loading(dataset_type, dataset=dataset)
 
-        netG = create_Cgen(model_path, use_pretrained_gen)
-        netD = create_Cdis()
+        netG = create_Cgen(model_path, use_pretrained_gen, nc, label_dim)
+        netD = create_Cdis(nc, label_dim)
 
         criterion, fixed_noise, real_label, fake_label, optimizerG, optimizerD = initializion(netG, netD, loss_type, optimizer)
         fill, onehot = label_preprocess()

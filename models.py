@@ -3,9 +3,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
 
-# Number of channels in the training images. For color images this is 3
-nc = 3
-
 # Size of z latent vector (i.e. size of generator input)
 nz = 100
 
@@ -15,10 +12,8 @@ ngf = 64
 # Size of feature maps in discriminator
 ndf = 64
 
-label_dim = 2
-
 class Generator32(nn.Module):
-    def __init__(self):
+    def __init__(self, nc):
         super(Generator32, self).__init__()
         self.main = nn.Sequential(
             # input is Z, going into a convolution
@@ -45,7 +40,7 @@ class Generator32(nn.Module):
 
 
 class Discriminator32(nn.Module):
-    def __init__(self):
+    def __init__(self, nc):
         super(Discriminator32, self).__init__()
         self.main = nn.Sequential(
             # input is (nc) x 32 x 32
@@ -69,24 +64,24 @@ class Discriminator32(nn.Module):
     
 
 class Generator64(nn.Module):
-    def __init__(self):
+    def __init__(self, nc):
         super(Generator64, self).__init__()
         self.main = nn.Sequential(
             # input is Z, going into a convolution
             nn.ConvTranspose2d( nz, ngf * 8, 4, 1, 0, bias=False),                  #(W - 1)S -2P + (K - 1) + 1
-            nn.BatchNorm2d(ngf * 8),
+            nn.BatchNorm2d(ngf * 8, momentum=0.7),
             nn.ReLU(True),
             # state size. (ngf*8) x 4 x 4
             nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf * 4),
+            nn.BatchNorm2d(ngf * 4, momentum=0.7),
             nn.ReLU(True),
             # state size. (ngf*4) x 8 x 8
             nn.ConvTranspose2d( ngf * 4, ngf * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf * 2),
+            nn.BatchNorm2d(ngf * 2, momentum=0.7),
             nn.ReLU(True),
             # state size. (ngf*2) x 16 x 16
             nn.ConvTranspose2d( ngf * 2, ngf, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf),
+            nn.BatchNorm2d(ngf, momentum=0.7),
             nn.ReLU(True),
             # state size. (ngf) x 32 x 32
             nn.ConvTranspose2d( ngf, nc, 4, 2, 1, bias=False),
@@ -100,7 +95,7 @@ class Generator64(nn.Module):
 
 
 class Discriminator64(nn.Module):
-    def __init__(self):
+    def __init__(self, nc):
         super(Discriminator64, self).__init__()
         self.main = nn.Sequential(
             # input is (nc) x 64 x 64
@@ -108,15 +103,15 @@ class Discriminator64(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf) x 32 x 32
             nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ndf * 2),
+            nn.BatchNorm2d(ndf * 2, momentum=0.7),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*2) x 16 x 16
             nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ndf * 4),
+            nn.BatchNorm2d(ndf * 4, momentum=0.7),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*4) x 8 x 8
             nn.Conv2d(ndf * 4, ndf * 8, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ndf * 8),
+            nn.BatchNorm2d(ndf * 8, momentum=0.7),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*8) x 4 x 4
             nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),
@@ -128,28 +123,28 @@ class Discriminator64(nn.Module):
     
 
 class Generator128(nn.Module):
-    def __init__(self):
+    def __init__(self, nc):
         super(Generator128, self).__init__()
         self.main = nn.Sequential(
             # input is Z, going into a convolution
             nn.ConvTranspose2d( nz, ngf * 16, 4, 1, 0, bias=False),
-            nn.BatchNorm2d(ngf * 16),
+            nn.BatchNorm2d(ngf * 16, momentum=0.7),
             nn.ReLU(True),
             #jjjj
             nn.ConvTranspose2d( ngf * 16, ngf * 8, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf * 8),
+            nn.BatchNorm2d(ngf * 8, momentum=0.7),
             nn.ReLU(True),
             # state size. (ngf*8) x 4 x 4
             nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf * 4),
+            nn.BatchNorm2d(ngf * 4, momentum=0.7),
             nn.ReLU(True),
             # state size. (ngf*4) x 8 x 8
             nn.ConvTranspose2d( ngf * 4, ngf * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf * 2),
+            nn.BatchNorm2d(ngf * 2, momentum=0.7),
             nn.ReLU(True),
             # state size. (ngf*2) x 16 x 16
             nn.ConvTranspose2d( ngf * 2, ngf, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf),
+            nn.BatchNorm2d(ngf, momentum=0.7),
             nn.ReLU(True),
             # state size. (ngf) x 32 x 32
             nn.ConvTranspose2d( ngf, nc, 4, 2, 1, bias=False),
@@ -162,7 +157,7 @@ class Generator128(nn.Module):
     
 
 class Discriminator128(nn.Module):
-    def __init__(self):
+    def __init__(self, nc):
         super(Discriminator128, self).__init__()
         self.main = nn.Sequential(
             # input is (nc) x 64 x 64
@@ -170,19 +165,19 @@ class Discriminator128(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf) x 32 x 32
             nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ndf * 2),
+            nn.BatchNorm2d(ndf * 2, momentum=0.7),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*2) x 16 x 16
             nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ndf * 4),
+            nn.BatchNorm2d(ndf * 4, momentum=0.7),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*4) x 8 x 8
             nn.Conv2d(ndf * 4, ndf * 8, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ndf * 8),
+            nn.BatchNorm2d(ndf * 8, momentum=0.7),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*8) x 4 x 4
             nn.Conv2d(ndf * 8, ndf * 16, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ndf * 16),
+            nn.BatchNorm2d(ndf * 16, momentum=0.7),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*8) x 4 x 4
             nn.Conv2d(ndf * 16, 1, 4, 1, 0, bias=False),
@@ -195,7 +190,7 @@ class Discriminator128(nn.Module):
 
 
 class Generator256(nn.Module):
-    def __init__(self):
+    def __init__(self, nc):
         super(Generator256, self).__init__()
         self.main = nn.Sequential(
             # input is Z, going into a convolution
@@ -233,7 +228,7 @@ class Generator256(nn.Module):
     
 
 class Discriminator256(nn.Module):
-    def __init__(self):
+    def __init__(self, nc):
         super(Discriminator256, self).__init__()
         self.main = nn.Sequential(
             # input is (nc) x 256 x 256
@@ -272,7 +267,7 @@ class Discriminator256(nn.Module):
 class VAE(nn.Module):
     def __init__(
         self,
-        image_channels=nc,
+        image_channels=3,
         hidden_size=64,
         latent_size=nz
     ):
@@ -307,7 +302,7 @@ class VAE(nn.Module):
                                     nn.ReLU(),
                                     nn.ConvTranspose2d( 32, 16, 4, 2, 1), #16x16x16
                                     nn.ReLU(),
-                                    nn.ConvTranspose2d( 16, nc, 4, 2, 1), #8x32x32
+                                    nn.ConvTranspose2d( 16, image_channels, 4, 2, 1), #8x32x32
                                     nn.Sigmoid())
 
     def sample(self, log_var, mean):
@@ -339,7 +334,7 @@ class VAE(nn.Module):
 class VAE64(nn.Module):
     def __init__(
         self,
-        image_channels=nc,
+        image_channels=3,
         hidden_size=64,
         latent_size=nz
     ):
@@ -378,7 +373,7 @@ class VAE64(nn.Module):
                                     nn.ReLU(),
                                     nn.ConvTranspose2d( 16, 8, 4, 2, 1), #8x32x32
                                     nn.ReLU(),
-                                    nn.ConvTranspose2d( 8, nc, 4, 2, 1), #8x32x32
+                                    nn.ConvTranspose2d( 8, image_channels, 4, 2, 1), #8x32x32
                                     nn.Sigmoid())
 
     def sample(self, log_var, mean):
@@ -408,7 +403,7 @@ class VAE64(nn.Module):
     
 
 class WGANGen32(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(WGANGen32, self).__init__()
         
         self.noise_block = nn.Sequential(
@@ -453,7 +448,7 @@ class WGANGen32(nn.Module):
 #Discriminator Code 
 
 class WGANDis32(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(WGANDis32, self).__init__()
         
         self.img_block = nn.Sequential(        
@@ -490,7 +485,7 @@ class WGANDis32(nn.Module):
 
 
 class WGANGen64(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(WGANGen64, self).__init__()
         
         self.noise_block = nn.Sequential(
@@ -539,7 +534,7 @@ class WGANGen64(nn.Module):
 #Discriminator Code 
 
 class WGANDis64(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(WGANDis64, self).__init__()
         
         self.img_block = nn.Sequential(        
@@ -580,7 +575,7 @@ class WGANDis64(nn.Module):
 
 
 class WGANGen128(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(WGANGen128, self).__init__()
         
         self.noise_block = nn.Sequential(
@@ -633,7 +628,7 @@ class WGANGen128(nn.Module):
 #Discriminator Code 
 
 class WGANDis128(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(WGANDis128, self).__init__()
         
         self.img_block = nn.Sequential(        
@@ -677,7 +672,7 @@ class WGANDis128(nn.Module):
     
 
 class WGANGen256(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(WGANGen256, self).__init__()
         
         self.noise_block = nn.Sequential(
@@ -734,7 +729,7 @@ class WGANGen256(nn.Module):
 #Discriminator Code 
 
 class WGANDis256(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(WGANDis256, self).__init__()
         
         self.img_block = nn.Sequential(        
@@ -782,7 +777,7 @@ class WGANDis256(nn.Module):
     
     
 class CGANGen32(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(CGANGen32, self).__init__()
         
         self.noise_block = nn.Sequential(
@@ -827,7 +822,7 @@ class CGANGen32(nn.Module):
 #Discriminator Code 
 
 class CGANDis32(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(CGANDis32, self).__init__()
         
         self.img_block = nn.Sequential(        
@@ -863,7 +858,7 @@ class CGANDis32(nn.Module):
     
 
 class CGANGen64(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(CGANGen64, self).__init__()
         
         self.noise_block = nn.Sequential(
@@ -912,7 +907,7 @@ class CGANGen64(nn.Module):
 #Discriminator Code 
 
 class CGANDis64(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(CGANDis64, self).__init__()
         
         self.img_block = nn.Sequential(        
@@ -953,7 +948,7 @@ class CGANDis64(nn.Module):
 
 
 class CGANGen128(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(CGANGen128, self).__init__()
         
         self.noise_block = nn.Sequential(
@@ -1006,7 +1001,7 @@ class CGANGen128(nn.Module):
 #Discriminator Code 
 
 class CGANDis128(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(CGANDis128, self).__init__()
         
         self.img_block = nn.Sequential(        
@@ -1050,7 +1045,7 @@ class CGANDis128(nn.Module):
     
 
 class CGANGen256(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(CGANGen256, self).__init__()
         
         self.noise_block = nn.Sequential(
@@ -1107,7 +1102,7 @@ class CGANGen256(nn.Module):
 #Discriminator Code 
 
 class CGANDis256(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, label_dim):
         super(CGANDis256, self).__init__()
         
         self.img_block = nn.Sequential(        
@@ -1157,7 +1152,7 @@ class CGANDis256(nn.Module):
 class VAE64WithBN(nn.Module):
     def __init__(
         self,
-        image_channels=nc,
+        image_channels=3,
         hidden_size=64,
         latent_size=nz
     ):
@@ -1199,7 +1194,7 @@ class VAE64WithBN(nn.Module):
                                     nn.ReLU(),
                                     nn.ConvTranspose2d( 16, 8, 4, 2, 1), #8x32x32
                                     nn.ReLU(),
-                                    nn.ConvTranspose2d( 8, nc, 4, 2, 1), #8x32x32
+                                    nn.ConvTranspose2d( 8, image_channels, 4, 2, 1), #8x32x32
                                     nn.Sigmoid())
 
     def sample(self, log_var, mean):
