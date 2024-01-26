@@ -10,6 +10,8 @@ from sklearn.model_selection import StratifiedKFold
 import cv2
 from torchvision.io import read_image
 
+# Prima versione del dataloader del dataset originale
+# utilizza openCV e si aspetta le trasformate di Albumentation
 class CustomDataset(Dataset):
     def __init__(self, root, transform, label=2, path_to_id=""):
         self.path = root
@@ -59,8 +61,17 @@ class CustomDataset(Dataset):
         return transformed_img, label
     
 
-
+# Seconda versione del dataloader per il dataset originale.
+# Non utilizza openCV e si aspetta le trasformate di pyTorch
+# Può essere usato per altri dataset dove tutte le immagini sono in una singola cartella e 
+# si conosce la label delle immagini.
 class CustomDataset2(Dataset):
+    # A questo dataloader è possibile passare una label specifica (0 o 1) se si sa già la classe di appartenenza
+    # delle immagini (gatto o cane). Questo dataloader carica tutte le immagini dentro una cartella.
+    # Se label=2 siamo in presenza del dataset originale, dunque per ogni immagine si va a prendere la 
+    # classe di appartenenza da un file specifico nella cartella del dataset.
+    # Se label viene passato come valore pari a 0 o 1, quel valore sarà associato a tutte le immagini della
+    # cartella.
     def __init__(self, root, transform, label=2, path_to_id=""):
         self.path = root
         self.transf = transform
@@ -108,6 +119,9 @@ class CustomDataset2(Dataset):
         return transformed_img, label
 
 
+# Questo dataset è specifico per il dataset originale fornito con le specifiche del progetto. Questo perché restituice una label 
+# compresa tra 0 e 36, ovvero il numero di specie diverse presenti nel dataset (pitbull, ragdoll ecc...). Essendo che per forza
+# ha bisogno del file con le informazioni su specie e razze, può essere usato solo con il dataset originale.  
 class OriginalDatasetSpecies(Dataset):
     def __init__(self, root, transform, path_to_id):
         self.path = root
@@ -145,7 +159,8 @@ class OriginalDatasetSpecies(Dataset):
         
         return transformed_img, label
     
-
+# Questo dataloader guarda tutte le sottocartelle presenti nel dataset e prende tutte le immagini.
+# Si tratta di un dataset composto da solo cani.
 class DogImagesWithLabels(Dataset):
     def __init__(self, root_dir, transform):
         self.root_dir = root_dir
@@ -174,7 +189,8 @@ class DogImagesWithLabels(Dataset):
         # 0 for cats, 1 for dogs
         return transformed_img, 1
     
-
+# Questo dataloader prende in ingresso lo stesso datatset del dataloader "Cat faces"
+# tuttavia prendendo tutte le immagini di tutte le sottocartelle.
 class CatImagesWithLabels(Dataset):
     def __init__(self, root_dir, transform):
         self.root_dir = root_dir
@@ -204,7 +220,9 @@ class CatImagesWithLabels(Dataset):
         transformed_img = self.transf(image)
 
         return transformed_img, 0
-    
+
+# Un generico dataset di gatti caricato per cercare di ovviare al problema del numero di immagini.
+# In questo caso il dataloader entra nelle tre cartelle di trin, validatione e test.
 class CatImagesWithoutLabels(Dataset):
     def __init__(self, root_dir, transform):
         self.root_dir = root_dir
@@ -231,7 +249,8 @@ class CatImagesWithoutLabels(Dataset):
 
         return transformed_image, 0
     
-
+# Questo dataloader crica le immagini di un altro dataet scaricato. Un dataset composto da sole immagini 
+# di facce di cani
 class DogFaces(Dataset):
     def __init__(self, root_dir, transform):
         self.root_dir = root_dir
@@ -257,6 +276,38 @@ class DogFaces(Dataset):
         transformed_image = self.transf(image)
 
         return transformed_image, 1
+    
+# Questo dataloader serve per caricare le immagini di uno specifico subset di immagini
+# all'interno di un dataset più ampio. In particolare si tratta di sole immagini di facce
+# di gatti.
+class CatFaces(Dataset):
+    def __init__(self, root_dir, transform):
+        self.root_dir = root_dir
+        self.image_paths = []
+        self.transf = transform
+
+        for subset in os.listdir(root_dir):
+            subset_path = os.path.join(root_dir, subset)
+            if os.path.isdir(subset_path):
+                for breed_folder in os.listdir(subset_path):
+                    if breed_folder == "animal animal_faces cat cat_face":
+                        breed_path = os.path.join(subset_path, breed_folder)
+                        if os.path.isdir(breed_path):
+                            for image_name in os.listdir(breed_path):
+                                image_path = os.path.join(breed_path, image_name)
+                                self.image_paths.append(image_path)
+
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image_path = self.image_paths[idx]
+
+        image = Image.open(image_path).convert('RGB')
+        transformed_img = self.transf(image)
+
+        return transformed_img, 0
         
 
 class IIITDataset(Dataset):
@@ -275,7 +326,6 @@ class IIITDataset(Dataset):
             img, mask = augmented["image"], augmented["mask"]
         return img, mask
         
-
 
 def create_dataset(image_size):
     
@@ -332,33 +382,3 @@ def create_dataset(image_size):
 
 
 
-
-
-class CatFaces(Dataset):
-    def __init__(self, root_dir, transform):
-        self.root_dir = root_dir
-        self.image_paths = []
-        self.transf = transform
-
-        for subset in os.listdir(root_dir):
-            subset_path = os.path.join(root_dir, subset)
-            if os.path.isdir(subset_path):
-                for breed_folder in os.listdir(subset_path):
-                    if breed_folder == "animal animal_faces cat cat_face":
-                        breed_path = os.path.join(subset_path, breed_folder)
-                        if os.path.isdir(breed_path):
-                            for image_name in os.listdir(breed_path):
-                                image_path = os.path.join(breed_path, image_name)
-                                self.image_paths.append(image_path)
-
-
-    def __len__(self):
-        return len(self.image_paths)
-
-    def __getitem__(self, idx):
-        image_path = self.image_paths[idx]
-
-        image = Image.open(image_path).convert('RGB')
-        transformed_img = self.transf(image)
-
-        return transformed_img, 0
