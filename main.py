@@ -18,6 +18,8 @@ import models
 
 import json
 
+# from torch.utils.tensorboard import SummaryWriter
+
 # Number of workers for dataloader
 workers = 2
 
@@ -74,6 +76,9 @@ TRAIN_FOLDER7 = "./Dog faces/dataset/data/"
 LABEL_FOLDER = "./dataset-iiit-pet-master/annotations/list.txt"
 PATH_TO_SAVE = "Models/Default/"
 
+# Oggetto per scrivere i dati su TensorBoard
+# writer = SummaryWriter(log_dir=os.path.join(PATH_TO_SAVE, "Tensorboard"))
+
 imagenet_mean = (0.5, 0.5, 0.5)
 imagenet_std = (0.5, 0.5, 0.5)
 
@@ -87,6 +92,7 @@ def set_seed():
     torch.manual_seed(manualSeed)
 
 
+# Metodo per la creazione del dataset per il variational autoencoder. 
 def data_loading_VA(dataset_type, dataset):
 
     if dataset == 'ANIMALS':
@@ -150,6 +156,7 @@ def data_loading_VA(dataset_type, dataset):
 
     return train_loader, test_loader
 
+# Metodo per la creazione del dataset per le GAN.
 def data_loading(dataset_type, dataset):
 
     if dataset == 'ANIMALS':
@@ -165,6 +172,8 @@ def data_loading(dataset_type, dataset):
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.5,), std=(0.5,))])
 
+        # Trasformazioni che usano Albumentations. Facendo diversi testi mi sono trovato meglio con le trasformazioni
+        # di pyTorch.
         train_tfm = A.Compose([
             A.Resize(image_size, image_size,  interpolation=1, always_apply=True, p=1),
             A.CenterCrop(image_size, image_size),
@@ -182,6 +191,9 @@ def data_loading(dataset_type, dataset):
             ToTensorV2(),
         ])
         
+
+        # Qui si compone il dataset in base al valore di "dataset_type" nel file json. 
+        # Il primo caso usa solo il dataset originale.
         if dataset_type == 1:
             train_data = dataloaders.CustomDataset2(root=TRAIN_FOLDER1, transform=data_transform, path_to_id=LABEL_FOLDER)
 
@@ -342,6 +354,7 @@ def data_loading(dataset_type, dataset):
         #                                         normalize=True).cpu(),(1,2,0)))
 
 
+    # Qui si fa il loading del dataset MNIST. Usato per controllare che il modello funzionase correttamente.
     elif dataset == 'MNIST':
         # MNIST dataset
         transform = transforms.Compose([transforms.Resize(image_size),
@@ -370,6 +383,8 @@ def weights_init(m):
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
 
+# Funzione per la crezione del modello del generatore (conditional gan). In base alla grandezza delle 
+# immagini desiderata, si crea il modello appropriato.
 def create_Cgen(model_path, use_pretrained_gen, nc, label_dim):
 
     # Create the generator
@@ -386,6 +401,7 @@ def create_Cgen(model_path, use_pretrained_gen, nc, label_dim):
     #  to mean=0, stdev=0.02.
     netG.apply(weights_init) 
 
+    # Se specificato nel file json, si carica un modello pre addestrato.
     if use_pretrained_gen:
         print("PRE TRAINED")
         checkpoint = torch.load(model_path)
@@ -398,7 +414,8 @@ def create_Cgen(model_path, use_pretrained_gen, nc, label_dim):
 
     return netG
 
-
+# Funzione per la crezione del modello del discriminatore (conditional gan). In base alla grandezza delle 
+# immagini desiderata, si crea il modello appropriato.
 def create_Cdis(nc, label_dim):
 
     # Create the Discriminator
@@ -423,6 +440,8 @@ def create_Cdis(nc, label_dim):
 def filter_keys(dictionary, target_word):
     return{key: value for key, value in dictionary.items() if target_word in key}
 
+# Funzione per la crezione del modello del generatore (weiestrass gan). In base alla grandezza delle 
+# immagini desiderata, si crea il modello appropriato.
 def create_Wgen(model_path, use_pretrained_gen, use_pretrained_vae, nc, label_dim):
 
     # Create the generator
@@ -440,6 +459,7 @@ def create_Wgen(model_path, use_pretrained_gen, use_pretrained_vae, nc, label_di
     if not use_pretrained_gen:
         netG.apply(weights_init)
 
+    # Anche nel caso della CGN, è possibile caricare un generatore pre addestrato.
     elif use_pretrained_gen:
         print("PRE TRAINED")
         checkpoint = torch.load(model_path)
@@ -472,7 +492,8 @@ def create_Wgen(model_path, use_pretrained_gen, use_pretrained_vae, nc, label_di
 
     return netG
 
-
+# Funzione per la crezione del modello del discriminatore (weiestrass gan). In base alla grandezza delle 
+# immagini desiderata, si crea il modello appropriato.
 def create_Wdis(nc, label_dim):
 
     # Create the Discriminator
@@ -494,6 +515,8 @@ def create_Wdis(nc, label_dim):
 
     return netD
 
+# Funzione per la crezione del modello del generatore. In base alla grandezza delle 
+# immagini desiderata, si crea il modello appropriato.
 def create_gen(nc):
 
     # Create the generator
@@ -515,7 +538,8 @@ def create_gen(nc):
 
     return netG
 
-
+# Funzione per la crezione del modello del discriminatore. In base alla grandezza delle 
+# immagini desiderata, si crea il modello appropriato.
 def create_dis(nc):
 
     # Create the Discriminator
@@ -577,7 +601,8 @@ def label_preprocess():
 
     return fill, onehot
 
-
+# Metodo per definire loss e ottimizzatore della rete. In base al file di configurazione
+# il codice inizializza loss e ottimizzatori specifici.
 def initializion(netG, netD, loss_type, optimizer):
     # Initialize BCELoss function
 
@@ -599,8 +624,8 @@ def initializion(netG, netD, loss_type, optimizer):
     real_label = 1.
     fake_label = 0.
 
-    # Setup Adam optimizers for both G and D
     if optimizer == "adam":
+        # Setup Adam optimizers for both G and D
         optimizerD = optim.Adam(netD.parameters(), lr=dis_learning_rate, betas=(beta1, 0.999))
         optimizerG = optim.Adam(netG.parameters(), lr=gen_learning_rate, betas=(beta1, 0.999))
     elif optimizer == "adamaX":
@@ -634,7 +659,7 @@ def generate_test(fixed_noise, onehot, G):
     G.train()
     return inference_res
 
-
+# Metodo che contiene il loop di addestramento della cgan
 def train_cgan(netG, netD, dataloader, criterion, fixed_noise, real_label, fake_label, optimizerG, optimizerD, fill, onehot):
     img_list = []
     G_losses = []
@@ -735,8 +760,9 @@ def train_cgan(netG, netD, dataloader, criterion, fixed_noise, real_label, fake_
             #         vutils.save_image(fake[item], os.path.join(PATH_TO_SAVE, "Fake images/{}.jpg").format(item))
 
             iters += 1
-        # scheduler_d.step()
-        # scheduler_g.step()
+        # Applica il decadimento del learning rate a fine di ogni epoca
+        scheduler_d.step()
+        scheduler_g.step()
         torch.save(netG.state_dict(), os.path.join(PATH_TO_SAVE, "netG_conditional.pth"))
     
     plt.figure(figsize=(10,5))
@@ -757,12 +783,13 @@ def train_wgan(netG, netD, dataloader, fixed_noise, optimizerG, optimizerD, fill
     D_losses = []
     iters = 0
 
+    # use an exponentially decaying learning rate
     scheduler_d = optim.lr_scheduler.ExponentialLR(optimizerD, gamma=0.99)
     scheduler_g = optim.lr_scheduler.ExponentialLR(optimizerG, gamma=0.99)
 
     print("Starting Training Loop...")
 
-    for epoch in range(num_epochs):
+    for epoch in range(num_epochs): 
         # For each batch in the dataloader
         for i, (imgs, labels) in enumerate(dataloader, 0):
             
@@ -857,6 +884,7 @@ def train_wgan(netG, netD, dataloader, fixed_noise, optimizerG, optimizerD, fill
             #         vutils.save_image(fake[item], os.path.join(PATH_TO_SAVE, "Fake images/{}.jpg").format(item))
 
             iters += 1
+        # Applica il decadimento del learning rate a fine di ogni epoca
         scheduler_d.step()
         scheduler_g.step()
         torch.save(netG.state_dict(), os.path.join(PATH_TO_SAVE, "netWG.pth"))
@@ -938,7 +966,7 @@ def test_VA(vae, test_loader):
     # plt.axis("off")
     # plt.show()
 
-
+# Questo metodo contiene il loop per addestrare la GAN classica.
 def train_model(netG, netD, dataloader, criterion, fixed_noise, real_label, fake_label, optimizerG, optimizerD):
     # Training Loop
 
@@ -947,6 +975,10 @@ def train_model(netG, netD, dataloader, criterion, fixed_noise, real_label, fake
     G_losses = []
     D_losses = []
     iters = 0
+
+    # Scheduler per diminuire il learning rate ad ogni epoca.
+    scheduler_d = optim.lr_scheduler.ExponentialLR(optimizerD, gamma=0.99)
+    scheduler_g = optim.lr_scheduler.ExponentialLR(optimizerG, gamma=0.99)
 
     print("Starting Training Loop...")
     # For each epoch
@@ -1034,7 +1066,6 @@ def train_model(netG, netD, dataloader, criterion, fixed_noise, real_label, fake
                 img_list.append(im_grid)
                 vutils.save_image(im_grid, os.path.join(PATH_TO_SAVE, "Grid images/{}_{}.jpg").format(epoch, iters))
 
-
             # # save 500 images generated from random noise in order to calculate FID score
             # if(epoch == num_epochs -1 and (i == len(dataloader)-1)):
             #     with torch.no_grad():
@@ -1043,6 +1074,12 @@ def train_model(netG, netD, dataloader, criterion, fixed_noise, real_label, fake
             #             vutils.save_image(fake[item], os.path.join(PATH_TO_SAVE, "Fake images/{}.jpg").format(item))
 
             iters += 1
+        # Salvo l'immagine a griglia su tensorboard
+        # writer.add_image("grid image", im_grid, epoch)
+            
+        # Applico lo scheduler all'ottimizzatore, riducendo il leraning rate
+        scheduler_d.step()
+        scheduler_g.step()
         torch.save(netG.state_dict(), os.path.join(PATH_TO_SAVE, "netG.pth"))
 
     #save the loss plotting on computer
@@ -1062,6 +1099,7 @@ def main():
 
     global image_size, batch_size, beta1, num_epochs, nc, gen_learning_rate, dis_learning_rate, momentum, label_dim, test_size
 
+    # Lettura dei prametri da file json
     with open("config.json", 'r') as json_file:
         config = json.load(json_file)
         model_type = config.get('model_type', 'GAN')
@@ -1083,6 +1121,8 @@ def main():
         model_path = config.get('model_path', './Models')
         use_pretrained_vae = config.get('use_pretrained_vae', False)
 
+    # Una serie di condizioni per controllare qualche modello è tato specificato nel file di configurazione
+    # per poter lanciare l'addestramento giusto
     if model_type == "GAN":
         set_seed()
         dataloader = data_loading(dataset_type, dataset=dataset)
