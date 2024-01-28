@@ -1078,11 +1078,12 @@ def train_model(netG, netD, dataloader, criterion, fixed_noise, real_label, fake
         # writer.add_image("grid image", im_grid, epoch)
             
         # Applico lo scheduler all'ottimizzatore, riducendo il leraning rate
-        scheduler_d.step()
-        scheduler_g.step()
+        # scheduler_d.step()
+        # scheduler_g.step()
+
         torch.save(netG.state_dict(), os.path.join(PATH_TO_SAVE, "netG.pth"))
 
-    #save the loss plotting on computer
+    #save the loss plotting on computer 
     plt.figure(figsize=(10,5))
     plt.title("Generator and Discriminator Loss During Training")
     plt.plot(G_losses,label="G")

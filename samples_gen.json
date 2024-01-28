@@ -1,6 +1,7 @@
 {
-    "generator_model_path": "./Models/WGAN64/new datasets + old/netWG.pth",
-    "model_type": "WGAN",
+    "generator_model_path": "./Models/GAN64/rmsprop/cat dog faces bias true/netG.pth",
+    "model_type": "GAN",
     "image_size": 64,
-    "num_images_to_generate": 500
+    "num_images_to_generate": 500,
+    "output_folder": "./Models/GAN64/rmsprop/cat dog faces bias true/Fake images/"
 }
