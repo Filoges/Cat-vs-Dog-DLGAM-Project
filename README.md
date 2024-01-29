@@ -22,7 +22,8 @@ This is the configuration file for the project. Instead of writing a program tha
 - "test_size" (int):  how many images will be used to make the grid view during training.
 - "use_pretrained_gen" (bool):  it is possible to load a pretrained generator model, by setting this parameter to "True".
 - "model_path" (str):  this path refers to the pretrained genrator .pth file.
-- "use_pretrained_vae" (bool): this parameter is read by the network, but does nothing. In future updates of the code, a pretrained decoder of the VA can be used as generator for the training.
+- "use_pretrained_vae" (bool): this parameter is for using the variational autoencoder's decoder as generator for the GAN. The weights of the Variational autoencoder are passed to the GAN generator model.
+- "va_path" (string): this is the path for the .pth file of the VA.
 
 ###dataset_type param
 In the main.py file there is a method called "data_loading" that return the dataloader used later during training. In this method the "dataset_type" param is read, and a different dataloader is used based on its value.
