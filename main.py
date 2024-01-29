@@ -340,6 +340,8 @@ def data_loading(dataset_type, dataset):
             train_data2 = dataloaders.DogFaces(root_dir=TRAIN_FOLDER7, transform=data_transform)
             train_data = torch.utils.data.ConcatDataset([train_data, train_data1, train_data2])
 
+        elif dataset_type == 17:
+            train_data = dataloaders.CatImagesWithLabels(root_dir=TRAIN_FOLDER4, transform=data_transform)
 
         dataloader = torch.utils.data.DataLoader(dataset=train_data,
                                                 batch_size=batch_size,
@@ -614,6 +616,9 @@ def initializion(netG, netD, loss_type, optimizer):
         criterion = nn.MSELoss()
     elif loss_type == "SmoothL1":
         criterion = nn.SmoothL1Loss()
+    elif loss_type == "Hinge":
+        # NOTA BENE: La Hinge loss si aspetta 1 e -1 come label, anzichè 0 1.
+        criterion = nn.HingeEmbeddingLoss()
     #criterion = nn.KLDivLoss(size_average=None, reduce=None, reduction='mean', log_target=False)
 
     # Create batch of latent vectors that we will use to visualize
@@ -623,6 +628,10 @@ def initializion(netG, netD, loss_type, optimizer):
     # Establish convention for real and fake labels during training
     real_label = 1.
     fake_label = 0.
+    if loss_type == "Hinge":
+        real_label = 1.
+        fake_label = -1.
+
 
     if optimizer == "adam":
         # Setup Adam optimizers for both G and D
@@ -1074,7 +1083,10 @@ def train_model(netG, netD, dataloader, criterion, fixed_noise, real_label, fake
             #             vutils.save_image(fake[item], os.path.join(PATH_TO_SAVE, "Fake images/{}.jpg").format(item))
 
             iters += 1
-        # Salvo l'immagine a griglia su tensorboard
+
+        # Salvo i dati utili su tensorboard
+        # writer.add_scalar("gen error", errG.item(), epoch)
+        # writer.add_scalar("dis error", errD.item(), epoch)
         # writer.add_image("grid image", im_grid, epoch)
             
         # Applico lo scheduler all'ottimizzatore, riducendo il leraning rate

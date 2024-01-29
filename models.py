@@ -71,14 +71,24 @@ class Generator64(nn.Module):
             nn.ConvTranspose2d( nz, ngf * 8, 4, 1, 0, bias=True),                  #(W - 1)S -2P + (K - 1) + 1
             nn.BatchNorm2d(ngf * 8, momentum=0.7),
             nn.ReLU(True),
+
+            nn.ConvTranspose2d( ngf * 8, ngf * 6, 1, 1, 0, bias=True),                  #(W - 1)S -2P + (K - 1) + 1
+            nn.BatchNorm2d(ngf * 6, momentum=0.7),
+            nn.ReLU(True),
+
             # nn.LeakyReLU(True),
             # state size. (ngf*8) x 4 x 4
-            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=True),
+            nn.ConvTranspose2d(ngf * 6, ngf * 4, 4, 2, 1, bias=True),
             nn.BatchNorm2d(ngf * 4, momentum=0.7),
             nn.ReLU(True),
+
+            nn.ConvTranspose2d( ngf * 4, ngf * 3, 1, 1, 0, bias=True),                  #(W - 1)S -2P + (K - 1) + 1
+            nn.BatchNorm2d(ngf * 3, momentum=0.7),
+            nn.ReLU(True),
+
             #à nn.LeakyReLU(True),
             # state size. (ngf*4) x 8 x 8
-            nn.ConvTranspose2d( ngf * 4, ngf * 2, 4, 2, 1, bias=True),
+            nn.ConvTranspose2d( ngf * 3, ngf * 2, 4, 2, 1, bias=True),
             nn.BatchNorm2d(ngf * 2, momentum=0.7),
             nn.ReLU(True),
             # nn.LeakyReLU(True),
@@ -86,9 +96,14 @@ class Generator64(nn.Module):
             nn.ConvTranspose2d( ngf * 2, ngf, 4, 2, 1, bias=True),
             nn.BatchNorm2d(ngf, momentum=0.7),
             nn.ReLU(True),
+
+            nn.ConvTranspose2d( ngf, ngf // 2, 1, 1, 0, bias=True),
+            nn.BatchNorm2d(ngf // 2, momentum=0.7),
+            nn.ReLU(True),
+
             # nn.LeakyReLU(True),
             # state size. (ngf) x 32 x 32
-            nn.ConvTranspose2d( ngf, nc, 4, 2, 1, bias=True),
+            nn.ConvTranspose2d( ngf//2, nc, 4, 2, 1, bias=True),
             # nn.ConvTranspose2d( ngf, 6, 4, 2, 1, bias=True),
             # nn.BatchNorm2d(6, momentum=0.7),
             # nn.ReLU(True),
