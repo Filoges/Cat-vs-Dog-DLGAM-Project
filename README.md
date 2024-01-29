@@ -52,3 +52,4 @@ This file sets the params for the generate_samples.py script. It is possible to 
 - image_size
 - num_images_to_generate
 Of course, the "image_size" param should match the image size the model was trained on.
+The "output_folder" param is used to specify the folder where the generated images will be saved.
