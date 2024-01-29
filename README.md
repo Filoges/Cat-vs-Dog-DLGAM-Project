@@ -11,6 +11,7 @@ This is the configuration file for the project. Instead of writing a program tha
 - "num_epochs" (int):  number of epoches required for the training.
 - "gen_learning_rate" (float):  learning rate for the generator class.
 - "dis_learning_rate" (float):  learning rate for the discriminator class.
+- "vae_lr" (float): learning rate for the Variational Autoencoder.
 - "beta1" (float):  parameter for adam optimizer.
 - "momentum" (float):  parameter for sgd optimizer.
 - "loss_type" (str):  desired loss function (bce, L1, MSE, SmoothL1).
