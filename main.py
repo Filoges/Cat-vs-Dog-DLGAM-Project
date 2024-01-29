@@ -115,11 +115,16 @@ def data_loading_VA(dataset_type, dataset):
         #train_data3 = dataloaders.CustomDataset(root=TRAIN_FOLDER3, transform=train_tfm, label=0)
         #train_data2 = torchvision.datasets.ImageFolder(root=TRAIN_FOLDER2, transform=train_tfm)
         #train_data4 = dataloaders.CustomDataset(root=TRAIN_FOLDER1, transform=augm_train, path_to_id=LABEL_FOLDER)
-        train_data5 = dataloaders.DogImagesWithLabels(root_dir=TRAIN_FOLDER5, transform=data_transform)
-        train_data6 = dataloaders.CatImagesWithoutLabels(root_dir=TRAIN_FOLDER6, transform=data_transform)
-        train_data7 = dataloaders.DogFaces(root_dir=TRAIN_FOLDER7, transform=data_transform)
+        if dataset_type == 1:
+            train_data5 = dataloaders.DogImagesWithLabels(root_dir=TRAIN_FOLDER5, transform=data_transform)
+            train_data6 = dataloaders.CatImagesWithoutLabels(root_dir=TRAIN_FOLDER6, transform=data_transform)
+            train_data7 = dataloaders.DogFaces(root_dir=TRAIN_FOLDER7, transform=data_transform)
 
-        train_data = torch.utils.data.ConcatDataset([train_data5, train_data6, train_data7])
+            train_data = torch.utils.data.ConcatDataset([train_data5, train_data6, train_data7])
+
+        elif dataset_type == 2:
+            train_data = dataloaders.CatFaces(root_dir=TRAIN_FOLDER4, transform=data_transform)
+
         train_dataset, test_dataset = torch.utils.data.random_split(train_data, [0.8, 0.2])
 
         train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
@@ -908,9 +913,8 @@ def train_wgan(netG, netD, dataloader, fixed_noise, optimizerG, optimizerD, fill
     plt.savefig(os.path.join(PATH_TO_SAVE, "losses.png"))
     plt.close()
 
-def train_VA(vae, train_loader, bce_loss):
+def train_VA(vae, train_loader, bce_loss, optimizer):
 
-    optimizer = torch.optim.Adam(vae.parameters(), lr=0.001)
     vae.train()
 
     for epoch in range(num_epochs):
@@ -930,6 +934,9 @@ def train_VA(vae, train_loader, bce_loss):
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tBCE: {:.6f} KL: {:.6f}'.format(
                     epoch, batch_idx * len(data), len(train_loader.dataset),
                     100. * batch_idx / len(train_loader), bce.item(), kl.item()))
+                
+                out_grid = torchvision.utils.make_grid(output[:8])
+                torchvision.utils.save_image(out_grid, os.path.join(PATH_TO_SAVE, "Grid images/{}_{}.jpg").format(epoch, batch_idx))
         
         # save model every epoch
         torch.save(vae.state_dict(), os.path.join(PATH_TO_SAVE, "vae.pth"))
@@ -957,7 +964,7 @@ def test_VA(vae, test_loader):
     # output
     plt.figure()
     out_grid = torchvision.utils.make_grid(out[:8])
-    torchvision.utils.save_image(out_grid, os.path.join(PATH_TO_SAVE, "Fake images/test.jpg"))
+    torchvision.utils.save_image(out_grid, os.path.join(PATH_TO_SAVE, "Fake images/test1.jpg"))
     plt.imshow(to_pil(out_grid))
     plt.axis("off")
     plt.show()
@@ -970,7 +977,7 @@ def test_VA(vae, test_loader):
 
     plt.figure()
     gen_grid = torchvision.utils.make_grid(generated_samples)
-    torchvision.utils.save_image(gen_grid, os.path.join(PATH_TO_SAVE, "Grid images/test.jpg"))
+    torchvision.utils.save_image(gen_grid, os.path.join(PATH_TO_SAVE, "Fake images/test2.jpg"))
     # plt.imshow(to_pil(gen_grid))
     # plt.axis("off")
     # plt.show()
@@ -1122,6 +1129,7 @@ def main():
         num_epochs = config.get('num_epochs', 100)
         gen_learning_rate = config.get('gen_learning_rate', 0.0002)
         dis_learning_rate = config.get('dis_learning_rate', 0.0002)
+        vae_lr = config.get('vae_lr', 0.001)
         beta1 = config.get('beta1', 0.5)
         momentum = config.get('momentum', 0.9)
         loss_type = config.get('loss_type', 'mse')
@@ -1154,7 +1162,19 @@ def main():
             vae = models.VAE64(image_channels=nc).to(device)
         train_loader, test_loader = data_loading_VA(dataset_type, dataset=dataset)
         criterion = nn.BCELoss(reduction="sum")
-        train_VA(vae, train_loader, criterion)
+
+        if optimizer == "adam":
+            # Setup Adam optimizers for both G and D
+            optimizerVA = optim.Adam(vae.parameters(), lr=vae_lr, betas=(beta1, 0.999))
+        elif optimizer == "adamaX":
+            optimizerVA = optim.Adamax(vae.parameters(), lr=vae_lr, betas=(beta1, 0.999))
+        elif optimizer == "sgd":
+            optimizerVA = optim.SGD(vae.parameters(), lr=vae_lr, momentum=momentum)
+        elif optimizer == "rmsprop":
+            # Con rmsprop meglio un learning rate basso
+            optimizerVA = optim.RMSprop(vae.parameters(), lr=vae_lr, alpha = 0.9)
+
+        train_VA(vae, train_loader, criterion, optimizerVA)
         test_VA(vae, test_loader)
 
     if model_type == "WGAN":
