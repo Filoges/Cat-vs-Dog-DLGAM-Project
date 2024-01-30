@@ -71,24 +71,20 @@ class Generator64(nn.Module):
             nn.ConvTranspose2d( nz, ngf * 8, 4, 1, 0, bias=True),                  #(W - 1)S -2P + (K - 1) + 1
             nn.BatchNorm2d(ngf * 8, momentum=0.7),
             nn.ReLU(True),
-
-            nn.ConvTranspose2d( ngf * 8, ngf * 6, 1, 1, 0, bias=True),                  #(W - 1)S -2P + (K - 1) + 1
-            nn.BatchNorm2d(ngf * 6, momentum=0.7),
-            nn.ReLU(True),
-
+            # nn.ConvTranspose2d( ngf * 8, ngf * 6, 1, 1, 0, bias=True),                  #(W - 1)S -2P + (K - 1) + 1
+            # nn.BatchNorm2d(ngf * 6, momentum=0.7),
+            # nn.ReLU(True),
             # nn.LeakyReLU(True),
             # state size. (ngf*8) x 4 x 4
-            nn.ConvTranspose2d(ngf * 6, ngf * 4, 4, 2, 1, bias=True),
+            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=True),
             nn.BatchNorm2d(ngf * 4, momentum=0.7),
             nn.ReLU(True),
-
-            nn.ConvTranspose2d( ngf * 4, ngf * 3, 1, 1, 0, bias=True),                  #(W - 1)S -2P + (K - 1) + 1
-            nn.BatchNorm2d(ngf * 3, momentum=0.7),
-            nn.ReLU(True),
-
-            #à nn.LeakyReLU(True),
+            # nn.ConvTranspose2d( ngf * 4, ngf * 3, 1, 1, 0, bias=True),                  #(W - 1)S -2P + (K - 1) + 1
+            # nn.BatchNorm2d(ngf * 3, momentum=0.7),
+            # nn.ReLU(True),
+            # nn.LeakyReLU(True),
             # state size. (ngf*4) x 8 x 8
-            nn.ConvTranspose2d( ngf * 3, ngf * 2, 4, 2, 1, bias=True),
+            nn.ConvTranspose2d( ngf * 4, ngf * 2, 4, 2, 1, bias=True),
             nn.BatchNorm2d(ngf * 2, momentum=0.7),
             nn.ReLU(True),
             # nn.LeakyReLU(True),
@@ -97,13 +93,13 @@ class Generator64(nn.Module):
             nn.BatchNorm2d(ngf, momentum=0.7),
             nn.ReLU(True),
 
-            nn.ConvTranspose2d( ngf, ngf // 2, 1, 1, 0, bias=True),
-            nn.BatchNorm2d(ngf // 2, momentum=0.7),
-            nn.ReLU(True),
+            # nn.ConvTranspose2d( ngf, ngf // 2, 1, 1, 0, bias=True),
+            # nn.BatchNorm2d(ngf // 2, momentum=0.7),
+            # nn.ReLU(True),
 
             # nn.LeakyReLU(True),
             # state size. (ngf) x 32 x 32
-            nn.ConvTranspose2d( ngf//2, nc, 4, 2, 1, bias=True),
+            nn.ConvTranspose2d( ngf, nc, 4, 2, 1, bias=True),
             # nn.ConvTranspose2d( ngf, 6, 4, 2, 1, bias=True),
             # nn.BatchNorm2d(6, momentum=0.7),
             # nn.ReLU(True),
@@ -1179,7 +1175,7 @@ class VAE64WithBN(nn.Module):
         hidden_size=64,
         latent_size=nz
     ):
-        super(VAE64, self).__init__()
+        super(VAE64WithBN, self).__init__()
         
         self.hidden_size = hidden_size
         self.latent_size = latent_size
@@ -1206,19 +1202,22 @@ class VAE64WithBN(nn.Module):
         self.resize_fc = nn.Linear(self.latent_size, self.hidden_size)
         
         ## decoder ##
-        self.Decoder = nn.Sequential(nn.ConvTranspose2d( self.hidden_size * 8, ngf * 4, 4, 1, 0), #64x4x4  (W - 1)S -2P + (K - 1) + 1
-                                    nn.BatchNorm2d(64),
+        self.Decoder = nn.Sequential(nn.ConvTranspose2d( self.latent_size, ngf * 8, 4, 1, 0), #64x4x4  (W - 1)S -2P + (K - 1) + 1
+                                    nn.BatchNorm2d(ngf * 8, momentum=0.7),
                                     nn.ReLU(),
-                                    nn.ConvTranspose2d( 64, 32, 4, 2, 1), #32x8x8
-                                    nn.BatchNorm2d(32),
+                                    nn.ConvTranspose2d( ngf * 8, ngf * 4, 4, 2, 1), #32x8x8
+                                    nn.BatchNorm2d(ngf * 4, momentum=0.7),
                                     nn.ReLU(),
-                                    nn.ConvTranspose2d( 32, 16, 4, 2, 1), #16x16x16
-                                    nn.BatchNorm2d(16),
+                                    nn.ConvTranspose2d( ngf * 4, ngf * 2, 4, 2, 1), #16x16x16
+                                    nn.BatchNorm2d(ngf * 2, momentum=0.7),
                                     nn.ReLU(),
-                                    nn.ConvTranspose2d( 16, 8, 4, 2, 1), #8x32x32
+                                    nn.ConvTranspose2d( ngf * 2, ngf, 4, 2, 1), #8x32x32
+                                    nn.BatchNorm2d(ngf, momentum=0.7),
                                     nn.ReLU(),
-                                    nn.ConvTranspose2d( 8, image_channels, 4, 2, 1), #8x32x32
+                                    nn.ConvTranspose2d( ngf, image_channels, 4, 2, 1), #8x32x32
                                     nn.Sigmoid())
+        
+        self.pre_dec_conv = nn.ConvTranspose2d(self.hidden_size, self.latent_size, 1)
 
     def sample(self, log_var, mean):
         std = torch.exp(0.5 * log_var)
@@ -1236,7 +1235,8 @@ class VAE64WithBN(nn.Module):
         z = self.sample(log_var, mean)
         
         x = self.resize_fc(z).view(z.size(0),self.hidden_size,1,1)
-        
+        x = self.pre_dec_conv(x)
+
         x = self.Decoder(x)
 
         return x, log_var, mean
