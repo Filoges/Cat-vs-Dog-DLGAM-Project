@@ -524,7 +524,7 @@ def create_Wdis(nc, label_dim):
 
 # Funzione per la crezione del modello del generatore. In base alla grandezza delle 
 # immagini desiderata, si crea il modello appropriato.
-def create_gen(nc):
+def create_gen(nc, use_pretrained_vae, va_path):
 
     # Create the generator
     if image_size == 32:
@@ -538,7 +538,30 @@ def create_gen(nc):
 
     # Apply the weights_init function to randomly initialize all weights
     #  to mean=0, stdev=0.02.
-    netG.apply(weights_init)                     
+    netG.apply(weights_init) 
+
+    if use_pretrained_vae:  
+        # Carico il modello
+        checkpoint = torch.load(va_path)
+
+        target_word_checkpoint = 'Decoder'
+        target_word_gen = 'main'
+        print(checkpoint.keys())
+        # for key, value in netG.state_dict().items():
+        #     print("curr model", key)
+        # Prendo solo i pesi relativi al decoder del VA
+        filtered_keys_checkpoint = filter_keys(checkpoint, target_word_checkpoint)
+        # filtered_keys_gen = filter_keys(netG.state_dict(), target_word_gen)
+
+        for checkpoint_key, checkpoint_value in filtered_keys_checkpoint.items():
+            # Sostituisco "main" a "Decoder" nel nome del layer, in modo da avere corrispondenza
+            # di nomi tra GAN e VA 
+            key_suffix = checkpoint_key.split(target_word_checkpoint)[-1]
+            key_model = target_word_gen + key_suffix
+            print("key_model ", key_model)
+            # Carico i pesi dal decoder del VA al generatore della GAN
+            if key_model in netG.state_dict():
+                netG.state_dict()[key_model].copy_(checkpoint_value)                    
 
     # Print the model
     print(netG)
@@ -1075,7 +1098,7 @@ def train_model(netG, netD, dataloader, criterion, fixed_noise, real_label, fake
             D_losses.append(errD.item())
 
             # Check how the generator is doing by saving G's output on fixed_noise
-            if (i  % 250 == 0) or ((epoch == num_epochs-1) and (i == len(dataloader)-1)):
+            if (i  % 600 == 0) or ((epoch == num_epochs-1) and (i == len(dataloader)-1)):
                 with torch.no_grad():
                     fake = netG(fixed_noise).detach().cpu()
                 im_grid = vutils.make_grid(fake, padding=2, normalize=True)
@@ -1141,6 +1164,7 @@ def main():
         use_pretrained_gen = config.get('use_pretrained_gen', False)
         model_path = config.get('model_path', './Models')
         use_pretrained_vae = config.get('use_pretrained_vae', False)
+        va_path = config.get('va_path', './Models')
 
     # Una serie di condizioni per controllare qualche modello è tato specificato nel file di configurazione
     # per poter lanciare l'addestramento giusto
@@ -1148,7 +1172,7 @@ def main():
         set_seed()
         dataloader = data_loading(dataset_type, dataset=dataset)
 
-        netG = create_gen(nc)
+        netG = create_gen(nc, use_pretrained_vae, va_path)
         netD = create_dis(nc)
 
         criterion, fixed_noise, real_label, fake_label, optimizerG, optimizerD = initializion(netG, netD, loss_type, optimizer)
@@ -1159,10 +1183,13 @@ def main():
         if image_size == 32:
             vae = models.VAE(image_channels=nc).to(device)
         else:
-            vae = models.VAE64(image_channels=nc).to(device)
+            # vae = models.VAE64(image_channels=nc).to(device)
+            vae = models.VAE64WithBN(image_channels=nc).to(device)
         train_loader, test_loader = data_loading_VA(dataset_type, dataset=dataset)
         criterion = nn.BCELoss(reduction="sum")
 
+        # In base alla scelta effettuata nel file json, viene inizializzato l'ottimizzatore appropriato per
+        # il VA
         if optimizer == "adam":
             # Setup Adam optimizers for both G and D
             optimizerVA = optim.Adam(vae.parameters(), lr=vae_lr, betas=(beta1, 0.999))

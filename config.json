@@ -1,5 +1,5 @@
 {
-    "model_type": "VA",   
+    "model_type": "WGAN",   
     "image_size": 64,
     "batch_size": 64,
     "num_channels": 3,
@@ -11,13 +11,14 @@
     "momentum" : 0.9,
     "loss_type": "bce",  
     "optimizer": "rmsprop",
-    "dataset_type": 2,
+    "dataset_type": 6,
     "dataset": "ANIMALS",
     "label_dim": 2,
     "test_size": 32,
     "use_pretrained_gen": false,
     "model_path": "./Models/WGAN64/no albumentation/netWG.pth",
-    "use_pretrained_vae" : false
+    "use_pretrained_vae" : false,
+    "va_path": "./Models/VA64/ANIMALS/rmsprop/new vae/vae.pth"
   }
   
   
